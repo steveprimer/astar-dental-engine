@@ -29,7 +29,7 @@ export default function MathWaterfall({ adSpend, cpl, showRate, closeRate, patie
   };
 
   const formatNum = (value: number) => {
-    return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 1 }).format(value);
+    return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(value);
   };
 
   return (
