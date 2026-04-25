@@ -2,27 +2,35 @@
 
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, LabelList } from 'recharts';
-import { Activity, TrendingUp, AlertCircle, ShieldCheck } from 'lucide-react';
+import { Activity, TrendingUp, AlertCircle, ShieldCheck, Users, Target, CheckCircle, IndianRupee } from 'lucide-react';
+import MathWaterfall from './MathWaterfall';
 
 export default function DentalRoiCalculator() {
+  // 1. Dynamic Interactive State (No more hidden assumptions)
   const [adSpend, setAdSpend] = useState(100000);
+  const [cpl, setCpl] = useState(2000);
+  const [showRate, setShowRate] = useState(20);
+  const [closeRate, setCloseRate] = useState(20);
+  const [patientValue, setPatientValue] = useState(350000);
   
-  // Fixed Constants based on AStar CodeX Math
-  const AVG_PATIENT_VALUE = 400000; 
+  // 2. AStar CodeX Math Engine
+  const leads = adSpend / cpl;
+  const walkIns = leads * (showRate / 100);
+  const aStarClosesRaw = walkIns * (closeRate / 100);
+  const aStarRevenue = aStarClosesRaw * patientValue;
+  const aStarRoas = adSpend > 0 ? (aStarRevenue / adSpend).toFixed(1) : "0.0";
   
-  // AStar CodeX Projections 
-  const aStarClosesRaw = (adSpend / 100000) * 1.8;
-  const aStarRevenue = aStarClosesRaw * AVG_PATIENT_VALUE;
-  const aStarRoas = (aStarRevenue / adSpend).toFixed(1);
-  
-  // Psychological Fix: Convert raw decimals to a realistic human range
+  // Clean decimal formatting for display
   const minPatients = Math.floor(aStarClosesRaw);
   const maxPatients = Math.ceil(aStarClosesRaw);
   const patientText = minPatients === maxPatients ? `${minPatients}` : `${minPatients} to ${maxPatients}`;
   
-  // Generic Agency Projections 
-  const genericClosesRaw = (adSpend / 100000) * 1;
-  const genericRevenue = genericClosesRaw * AVG_PATIENT_VALUE;
+  // 3. Generic Agency Projections (Math penalty for slow follow-up)
+  // Assuming generic agencies lose 60% of potential walk-ins due to 15+ min response times
+  const genericShowRate = showRate * 0.4; 
+  const genericWalkIns = leads * (genericShowRate / 100);
+  const genericClosesRaw = genericWalkIns * (closeRate / 100);
+  const genericRevenue = genericClosesRaw * patientValue;
 
   const additionalRevenue = aStarRevenue - genericRevenue;
 
@@ -47,7 +55,6 @@ export default function DentalRoiCalculator() {
     }).format(value);
   };
 
-  // Custom Tick optimized for smaller screens (iPad/Mobile)
   const CustomXAxisTick = ({ x, y, payload }: any) => {
     const isGeneric = payload.value === 'Generic Agency';
     return (
@@ -56,14 +63,14 @@ export default function DentalRoiCalculator() {
           {payload.value}
         </text>
         <text x={0} y={0} dy={32} textAnchor="middle" fill={isGeneric ? '#ef4444' : '#059669'} fontSize={10} fontWeight={700}>
-          {isGeneric ? '(15-Min Lead Death)' : '(3-Sec API Intercept)'}
+          {isGeneric ? `(${genericShowRate.toFixed(1)}% Show Rate)` : `(${showRate}% Show Rate)`}
         </text>
       </g>
     );
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-2 sm:p-4 md:p-6 bg-gradient-to-br from-slate-200 to-slate-300 rounded-2xl sm:rounded-3xl shadow-2xl font-sans">
+    <div className="max-w-6xl mx-auto p-2 sm:p-4 md:p-6 bg-gradient-to-br from-slate-200 to-slate-300 rounded-2xl sm:rounded-3xl shadow-2xl font-sans">
       <div className="bg-white rounded-xl sm:rounded-[23px] overflow-hidden">
         
         {/* Premium Header */}
@@ -73,106 +80,145 @@ export default function DentalRoiCalculator() {
               <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-400" />
             </div>
             <div>
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight leading-tight">Growth Projection Engine</h2>
-              <p className="text-slate-400 mt-0.5 sm:mt-1 text-xs sm:text-sm font-medium">All-on-4 Patient Acquisition • Delhi NCR</p>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight leading-tight">Patient Yield Engine</h2>
+              <p className="text-slate-400 mt-0.5 sm:mt-1 text-xs sm:text-sm font-medium">Interactive ROI Modeler • AStar CodeX</p>
             </div>
           </div>
           <div className="hidden lg:flex items-center space-x-2 bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-full border border-emerald-500/30">
             <ShieldCheck className="w-5 h-5" />
-            <span className="text-sm font-bold whitespace-nowrap">Data-Backed Projections</span>
+            <span className="text-sm font-bold whitespace-nowrap">Collaborative Math</span>
           </div>
         </div>
 
         {/* REVERSED LAYOUT ON MOBILE/IPAD */}
         <div className="p-4 sm:p-6 md:p-8 flex flex-col-reverse lg:grid lg:grid-cols-12 gap-6 md:gap-8 lg:gap-10">
           
-          {/* Left Column (Now BOTTOM on mobile): Controls & Metrics */}
-          <div className="lg:col-span-5 space-y-6 sm:space-y-8">
+          {/* Left Column: Controls & Metrics */}
+          <div className="lg:col-span-5 space-y-5 sm:space-y-6">
             
-            {/* Slider Section */}
-            <div className="bg-slate-50 p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden">
-              <label className="block text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider mb-3 sm:mb-4">
+            {/* Ad Spend Section */}
+            <div className="bg-slate-50 p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                 Monthly Ad Investment
               </label>
-              <div className="flex items-center mb-4 sm:mb-6">
-                <span className={`text-3xl sm:text-4xl font-extrabold tracking-tight transition-colors ${adSpend < 60000 ? 'text-rose-600' : 'text-slate-900'}`}>
+              <div className="flex items-center mb-3">
+                <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
                   {formatINR(adSpend)}
                 </span>
               </div>
-              
-              <div className="relative pt-1 pb-2">
-                <div className="absolute top-3 left-0 h-4 sm:h-3 bg-rose-200 rounded-l-lg pointer-events-none" style={{ width: '4%' }}></div>
-                <input
-                  type="range"
-                  min="50000"
-                  max="300000"
-                  step="10000"
-                  value={adSpend}
-                  onChange={(e) => setAdSpend(Number(e.target.value))}
-                  className={`relative z-10 w-full h-4 sm:h-3 bg-slate-200/50 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-4 transition-all ${
-                    adSpend < 60000 ? 'accent-rose-500 focus:ring-rose-500/30' : 'accent-emerald-600 focus:ring-emerald-500/30'
-                  }`}
+              <input
+                type="range"
+                min="30000"
+                max="500000"
+                step="10000"
+                value={adSpend}
+                onChange={(e) => setAdSpend(Number(e.target.value))}
+                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+              />
+            </div>
+
+            {/* Clinic Variables Grid */}
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200">
+                <div className="flex items-center text-slate-500 mb-1">
+                  <Users className="w-3.5 h-3.5 mr-1.5" />
+                  <span className="text-[10px] sm:text-xs font-bold uppercase">Cost Per Lead</span>
+                </div>
+                <input 
+                  type="number" 
+                  value={cpl} 
+                  onChange={(e) => setCpl(Number(e.target.value))}
+                  className="w-full bg-white border border-slate-300 text-slate-800 text-sm font-bold rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-emerald-500 outline-none"
                 />
               </div>
-              
-              <div className="flex justify-between text-xs sm:text-sm font-semibold mt-2">
-                <span className={adSpend < 60000 ? "text-rose-500" : "text-slate-400"}>₹50K</span>
-                <span className="text-slate-400">₹3L</span>
+
+              <div className="bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200">
+                <div className="flex items-center text-slate-500 mb-1">
+                  <IndianRupee className="w-3.5 h-3.5 mr-1.5" />
+                  <span className="text-[10px] sm:text-xs font-bold uppercase">Avg Case Value</span>
+                </div>
+                <input 
+                  type="number" 
+                  value={patientValue} 
+                  onChange={(e) => setPatientValue(Number(e.target.value))}
+                  className="w-full bg-white border border-slate-300 text-slate-800 text-sm font-bold rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
               </div>
 
-              {adSpend < 60000 && (
-                <p className="text-rose-600 text-[10px] sm:text-xs font-bold mt-3 sm:mt-4 animate-pulse bg-rose-50 p-2 rounded-lg border border-rose-100">
-                  ⚠️ WARNING: Budget mathematically insufficient to outbid corporate chains for All-on-4 patients.
-                </p>
-              )}
+              <div className="bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200">
+                <div className="flex items-center text-slate-500 mb-1">
+                  <Target className="w-3.5 h-3.5 mr-1.5" />
+                  <span className="text-[10px] sm:text-xs font-bold uppercase">Show Rate (%)</span>
+                </div>
+                <input 
+                  type="number" 
+                  value={showRate} 
+                  onChange={(e) => setShowRate(Number(e.target.value))}
+                  className="w-full bg-white border border-slate-300 text-slate-800 text-sm font-bold rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+              </div>
+
+              <div className="bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200">
+                <div className="flex items-center text-slate-500 mb-1">
+                  <CheckCircle className="w-3.5 h-3.5 mr-1.5" />
+                  <span className="text-[10px] sm:text-xs font-bold uppercase">Close Rate (%)</span>
+                </div>
+                <input 
+                  type="number" 
+                  value={closeRate} 
+                  onChange={(e) => setCloseRate(Number(e.target.value))}
+                  className="w-full bg-white border border-slate-300 text-slate-800 text-sm font-bold rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+              </div>
             </div>
 
             {/* AStar Results Box */}
-            <div className="bg-white p-5 sm:p-7 rounded-xl sm:rounded-2xl shadow-xl border-2 border-emerald-500 relative overflow-hidden">
-              <div className="absolute -right-10 -top-10 w-32 sm:w-40 h-32 sm:h-40 bg-emerald-50 rounded-full blur-3xl"></div>
+            <div className="bg-white p-5 sm:p-6 rounded-xl shadow-xl border-2 border-emerald-500 relative overflow-hidden">
+              <div className="absolute -right-10 -top-10 w-32 h-32 bg-emerald-50 rounded-full blur-3xl"></div>
               
-              <h3 className="font-bold text-emerald-700 flex items-center text-xs sm:text-sm uppercase tracking-wider mb-4 sm:mb-6">
-                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                AStar CodeX Yield
+              <h3 className="font-bold text-emerald-700 flex items-center text-xs sm:text-sm uppercase tracking-wider mb-4">
+                <TrendingUp className="w-4 h-4 mr-2" />
+                AStar CodeX Projected Yield
               </h3>
               
-              <div className="space-y-4 sm:space-y-5 relative z-10">
-                <div className="flex justify-between items-end border-b border-slate-100 pb-3 sm:pb-4">
-                  <span className="text-slate-500 text-sm sm:text-base font-medium">Projected Closes</span>
-                  <span className="text-xl sm:text-2xl font-bold text-slate-800">
-                    {patientText} <span className="text-xs sm:text-sm text-slate-500 font-normal">Patients</span>
+              <div className="space-y-4 relative z-10">
+                <div className="flex justify-between items-end border-b border-slate-100 pb-3">
+                  <span className="text-slate-500 text-sm font-medium">Projected Closes</span>
+                  <span className="text-xl font-bold text-slate-800">
+                    {patientText} <span className="text-xs text-slate-500 font-normal">Patients</span>
                   </span>
                 </div>
                 
-                <div className="flex justify-between items-end border-b border-slate-100 pb-3 sm:pb-4">
-                  <span className="text-slate-500 text-sm sm:text-base font-medium">Gross Return</span>
-                  <span className="text-xl sm:text-2xl font-bold text-emerald-600">{aStarRoas}x</span>
+                <div className="flex justify-between items-end border-b border-slate-100 pb-3">
+                  <span className="text-slate-500 text-sm font-medium">Gross Return (ROAS)</span>
+                  <span className="text-xl font-bold text-emerald-600">{aStarRoas}x</span>
                 </div>
 
-                <div className="pt-1 sm:pt-2">
-                  <span className="block text-slate-500 text-xs sm:text-sm font-medium mb-1">Total Gross Revenue</span>
-                  <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">{formatINR(aStarRevenue)}</span>
+                <div className="pt-1">
+                  <span className="block text-slate-500 text-xs font-medium mb-1">Total Gross Revenue</span>
+                  <span className="text-3xl font-extrabold text-slate-900 tracking-tight">{formatINR(aStarRevenue)}</span>
                 </div>
               </div>
             </div>
             
-            {/* Disclaimer */}
-            <div className="flex items-start space-x-2 sm:space-x-3 text-xs sm:text-sm text-slate-500 bg-slate-50 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-slate-200">
-              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 flex-shrink-0 mt-0.5" />
-              <p className="leading-relaxed">
-                Requires adherence to our clinic script framework to maintain the baseline 20% consultation-to-close conversion rate.
-              </p>
-            </div>
+            <MathWaterfall 
+              adSpend={adSpend} 
+              cpl={cpl} 
+              showRate={showRate} 
+              closeRate={closeRate} 
+              patientValue={patientValue} 
+            />
+
           </div>
 
-          {/* Right Column (Now TOP on mobile): Chart & Comparison */}
+          {/* Right Column: Chart & Comparison */}
           <div className="lg:col-span-7 flex flex-col justify-between mt-2 lg:mt-0">
             
             {/* Delta Callout */}
-            <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between bg-rose-50 p-4 sm:p-5 rounded-xl sm:rounded-2xl border border-rose-200 shadow-sm gap-3 sm:gap-0">
+            <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between bg-rose-50 p-4 sm:p-5 rounded-xl border border-rose-200 shadow-sm gap-3 sm:gap-0">
               <div>
                 <p className="text-rose-800 text-xs sm:text-sm font-bold uppercase tracking-wider">The Cost of Inaction</p>
-                <p className="text-rose-600/80 text-xs sm:text-sm mt-0.5 sm:mt-1 font-medium">Revenue lost to slow lead follow-up</p>
+                <p className="text-rose-600/80 text-xs sm:text-sm mt-0.5 font-medium">Revenue lost to slow lead follow-up</p>
               </div>
               <div className="text-left sm:text-right w-full sm:w-auto border-t border-rose-200 sm:border-0 pt-2 sm:pt-0">
                 <span className="text-2xl sm:text-3xl font-extrabold text-rose-600 animate-pulse">+{formatINR(additionalRevenue)}</span>
