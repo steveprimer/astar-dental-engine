@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calculator, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react';
+import { Calculator, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface MathWaterfallProps {
   adSpend: number;
@@ -16,9 +16,11 @@ export default function MathWaterfall({ adSpend, cpl, showRate, closeRate, patie
   const safeCpl = cpl > 0 ? cpl : 1;
   const leads = adSpend / safeCpl;
   const walkIns = leads * (showRate / 100);
-  const closes = walkIns * (closeRate / 100);
-  const revenue = closes * patientValue;
-  const roas = adSpend > 0 ? (revenue / adSpend).toFixed(1) : "0.0";
+  const closesRaw = walkIns * (closeRate / 100);
+  
+  // THE FIX: Floor to the nearest integer
+  const actualCloses = Math.floor(closesRaw);
+  const revenue = actualCloses * patientValue;
 
   const formatINR = (value: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -64,18 +66,20 @@ export default function MathWaterfall({ adSpend, cpl, showRate, closeRate, patie
             </span>
           </div>
 
-          <div className="flex items-center justify-between text-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-sm">
             <span className="text-slate-500 font-medium">3. Closed Patients</span>
-            <span className="font-bold text-slate-800 flex items-center gap-2">
-              <span className="text-xs text-slate-400 font-normal">{formatNum(walkIns)} × {closeRate}% =</span> 
-              {formatNum(closes)}
-            </span>
+            <div className="font-bold text-slate-800 flex items-center gap-1 sm:gap-2 mt-1 sm:mt-0">
+              <span className="text-xs text-slate-400 font-normal">{formatNum(walkIns)} × {closeRate}% = {formatNum(closesRaw)} </span> 
+              <span className="text-[10px] sm:text-xs text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded italic">
+                (Floored to {actualCloses})
+              </span>
+            </div>
           </div>
 
           <div className="flex items-center justify-between text-sm border-t border-slate-100 pt-3 mt-3">
             <span className="text-slate-700 font-bold">Gross Revenue</span>
-            <span className="font-bold text-emerald-600 flex items-center gap-2">
-              <span className="text-xs text-slate-400 font-normal">{formatNum(closes)} × {formatINR(patientValue)} =</span> 
+            <span className={`font-bold flex items-center gap-2 ${actualCloses < 1 ? 'text-rose-600' : 'text-emerald-600'}`}>
+              <span className="text-xs text-slate-400 font-normal">{actualCloses} × {formatINR(patientValue)} =</span> 
               {formatINR(revenue)}
             </span>
           </div>

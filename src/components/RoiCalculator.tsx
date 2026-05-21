@@ -6,31 +6,33 @@ import { Activity, TrendingUp, AlertCircle, ShieldCheck, Users, Target, CheckCir
 import MathWaterfall from './MathWaterfall';
 
 export default function DentalRoiCalculator() {
-  // 1. Dynamic Interactive State (No more hidden assumptions)
   const [adSpend, setAdSpend] = useState(100000);
   const [cpl, setCpl] = useState(2000);
   const [showRate, setShowRate] = useState(20);
   const [closeRate, setCloseRate] = useState(20);
   const [patientValue, setPatientValue] = useState(350000);
   
-  // 2. AStar CodeX Math Engine
+  // 2. AStar CodeX Math Engine (Updated to floor whole patients)
   const leads = adSpend / cpl;
   const walkIns = leads * (showRate / 100);
   const aStarClosesRaw = walkIns * (closeRate / 100);
-  const aStarRevenue = aStarClosesRaw * patientValue;
+  
+  // THE FIX: You cannot have a fraction of a patient. We round down to the nearest whole integer.
+  const aStarClosesActual = Math.floor(aStarClosesRaw);
+  const aStarRevenue = aStarClosesActual * patientValue;
   const aStarRoas = adSpend > 0 ? (aStarRevenue / adSpend).toFixed(1) : "0.0";
   
-  // Clean decimal formatting for display
   const minPatients = Math.floor(aStarClosesRaw);
   const maxPatients = Math.ceil(aStarClosesRaw);
   const patientText = minPatients === maxPatients ? `${minPatients}` : `${minPatients} to ${maxPatients}`;
   
-  // 3. Generic Agency Projections (Math penalty for slow follow-up)
-  // Assuming generic agencies lose 60% of potential walk-ins due to 15+ min response times
+  // 3. Generic Agency Projections (Updated to floor whole patients)
   const genericShowRate = showRate * 0.4; 
   const genericWalkIns = leads * (genericShowRate / 100);
   const genericClosesRaw = genericWalkIns * (closeRate / 100);
-  const genericRevenue = genericClosesRaw * patientValue;
+  
+  const genericClosesActual = Math.floor(genericClosesRaw);
+  const genericRevenue = genericClosesActual * patientValue;
 
   const additionalRevenue = aStarRevenue - genericRevenue;
 
@@ -43,7 +45,7 @@ export default function DentalRoiCalculator() {
     {
       name: 'AStar CodeX',
       Revenue: aStarRevenue,
-      color: '#059669' // Premium Emerald
+      color: '#059669' 
     }
   ];
 
@@ -97,12 +99,12 @@ export default function DentalRoiCalculator() {
           <div className="lg:col-span-5 space-y-5 sm:space-y-6">
             
             {/* Ad Spend Section */}
-            <div className="bg-slate-50 p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm">
+            <div className="bg-slate-50 p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                 Monthly Ad Investment
               </label>
               <div className="flex items-center mb-3">
-                <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                <span className={`text-3xl font-extrabold tracking-tight ${aStarClosesActual < 1 ? 'text-rose-600' : 'text-slate-900'}`}>
                   {formatINR(adSpend)}
                 </span>
               </div>
@@ -113,8 +115,17 @@ export default function DentalRoiCalculator() {
                 step="10000"
                 value={adSpend}
                 onChange={(e) => setAdSpend(Number(e.target.value))}
-                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                className={`w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 transition-all ${
+                    aStarClosesActual < 1 ? 'accent-rose-500 focus:ring-rose-500/30' : 'accent-emerald-600 focus:ring-emerald-500/30'
+                  }`}
               />
+              
+              {/* Dynamic Warning if budget doesn't yield 1 whole patient */}
+              {aStarClosesActual < 1 && (
+                <p className="text-rose-600 text-[10px] sm:text-xs font-bold mt-3 animate-pulse bg-rose-50 p-2 rounded-lg border border-rose-100">
+                  ⚠️ INSUFFICIENT BUDGET: Math yields &lt; 1 patient. Revenue will be ₹0.
+                </p>
+              )}
             </div>
 
             {/* Clinic Variables Grid */}
@@ -184,19 +195,23 @@ export default function DentalRoiCalculator() {
               <div className="space-y-4 relative z-10">
                 <div className="flex justify-between items-end border-b border-slate-100 pb-3">
                   <span className="text-slate-500 text-sm font-medium">Projected Closes</span>
-                  <span className="text-xl font-bold text-slate-800">
+                  <span className={`text-xl font-bold ${aStarClosesActual < 1 ? 'text-rose-600' : 'text-slate-800'}`}>
                     {patientText} <span className="text-xs text-slate-500 font-normal">Patients</span>
                   </span>
                 </div>
                 
                 <div className="flex justify-between items-end border-b border-slate-100 pb-3">
                   <span className="text-slate-500 text-sm font-medium">Gross Return (ROAS)</span>
-                  <span className="text-xl font-bold text-emerald-600">{aStarRoas}x</span>
+                  <span className={`text-xl font-bold ${aStarClosesActual < 1 ? 'text-rose-600' : 'text-emerald-600'}`}>
+                    {aStarRoas}x
+                  </span>
                 </div>
 
                 <div className="pt-1">
                   <span className="block text-slate-500 text-xs font-medium mb-1">Total Gross Revenue</span>
-                  <span className="text-3xl font-extrabold text-slate-900 tracking-tight">{formatINR(aStarRevenue)}</span>
+                  <span className={`text-3xl font-extrabold tracking-tight ${aStarClosesActual < 1 ? 'text-rose-600' : 'text-slate-900'}`}>
+                    {formatINR(aStarRevenue)}
+                  </span>
                 </div>
               </div>
             </div>
